@@ -1,36 +1,28 @@
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 
-using int8 = char;
-using int16 = short;
-using int32 = int;
-using int64 = long long;
-using uint8 = unsigned char;
-using uint16 = unsigned short;
-using uint32 = unsigned int;
-using uint64 = unsigned long long;
+#include "Common.h"
+#include "Color.h"
 
 void BufferToPPM(const char* filename, uint32 width, uint32 height, const uint8* buffer)
 {
 	FILE* f = nullptr;
 	if (fopen_s(&f, filename, "w") == 0)
 	{
-		const auto WriteStr = [f](const char* str)
-		{
-			fwrite(str, sizeof(char), strlen(str), f);
-		};
-
 		fprintf_s(f, "P3\n");
 		fprintf_s(f, "%lu %lu\n255\n", width, height);
 
 		const uint32 size = width * height * 3;
 		for (uint32 i = 0; i < size; i += 3)
 		{
+			//std::clog << "\rScanlines remaining: " << i / 3 / width << std::flush;
 			fprintf_s(f, "%u %u %u\n", buffer[i], buffer[i + 1], buffer[i + 2]);
 		}
 
 		fclose(f);
 	}
+	std::clog << "\rDone.                          \n";
 }
 
 void GenerateTestImage()
@@ -47,11 +39,15 @@ void GenerateTestImage()
 			const double r = static_cast<double>( x ) / static_cast<double>( width - 1 );
 			const double g = static_cast<double>( y ) / static_cast<double>( height - 1 );
 			const double b = 0.0;
+			const Color c{ r, g, b };
 
 			const uint32 index = (y * width) + x;
-			buffer[writeIndex++] = static_cast<uint8>( 255.99 * r );
-			buffer[writeIndex++] = static_cast<uint8>( 255.99 * g );
-			buffer[writeIndex++] = static_cast<uint8>( 255.99 * b );
+			ColorToRGB(c, buffer[writeIndex], buffer[writeIndex+1], buffer[writeIndex+2]);
+			writeIndex += 3;
+
+			//buffer[writeIndex++] = static_cast<uint8>( 255.99 * r );
+			//buffer[writeIndex++] = static_cast<uint8>( 255.99 * g );
+			//buffer[writeIndex++] = static_cast<uint8>( 255.99 * b );
 		}
 	}
 
@@ -61,7 +57,6 @@ void GenerateTestImage()
 
 int main()
 {
-	//BufferToPPM("Test.ppm", 3, 2, nullptr);
 	GenerateTestImage();
 
 	return 0;
