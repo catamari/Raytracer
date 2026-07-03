@@ -115,9 +115,11 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	// Hack: add slight min bias to prevent re-intersecting with the same surface due to floating point error (shadow acne).
 	if (GetFirstRayHit(ray, world, Interval{ 0.001, infinity }, hit))
 	{
-		// Use 50% of color from the first bounce
-		const Vec3 direction = RandomVectorOnHemisphere(hit.normal);
-		return 0.5 * CalculateRayColor(Ray{ hit.point, direction }, world, depth - 1);
+		// Lambertian reflection - reflected rays are more likely to scatter in a direction near the surface normal.
+		// By offsetting by the hit normal, we're forcing the random unit sphere vector to be within the unit sphere on the outside of the shape.
+		const Vec3 bounceDirection = hit.normal + RandomVectorInUnitSphere();
+		// Use 50% of color from the first bounce.
+		return 0.5 * CalculateRayColor(Ray{ hit.point, bounceDirection }, world, depth - 1);
 	}
 
 	const Vec3 UnitDir = UnitVector(ray.Direction());
