@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common.h"
+
 #include <cmath>
 #include <iostream>
 
@@ -74,6 +76,11 @@ public:
 	{
 		return x * x + y * y + z * z;
 	}
+
+	static Vec3 Random(double min = 0.0, double max = 1.0)
+	{
+		return { RandomValue(min, max), RandomValue(min, max), RandomValue(min, max) };
+	}
 };
 
 using Point3 = Vec3;
@@ -133,4 +140,31 @@ constexpr Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
 constexpr Vec3 UnitVector(const Vec3& vec)
 {
 	return vec / vec.Length();
+}
+
+inline Vec3 RandomVectorInUnitSphere()
+{
+	while (true)
+	{
+		const Vec3 vec = Vec3::Random(-1.0, 1.0);
+		const double lengthSq = vec.LengthSquared();
+		// Inside the sphere if x^2 + y^2 + z^2 <= 1.
+		if (lengthSq >= 1e-160 && lengthSq <= 1)
+		{
+			return vec / std::sqrt(lengthSq);
+		}
+	}
+}
+
+inline Vec3 RandomVectorOnHemisphere(const Vec3& normal)
+{
+	const Vec3 unitSphereVec = RandomVectorInUnitSphere();
+	if (DotProduct(unitSphereVec, normal) > 0.0) // In the same hemisphere as the normal
+	{
+		return unitSphereVec;
+	}
+	else
+	{
+		return -unitSphereVec; // Invert to get onto same hemisphere.
+	}
 }

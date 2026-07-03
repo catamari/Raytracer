@@ -104,14 +104,19 @@ bool GetFirstRayHit(const Ray& ray, const World& world, Interval interval, HitRe
 	return anyHits;
 }
 
-Color CalculateRayColor(const Ray& ray, const World& world)
+Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 {
-	// Hard coded sphere for now
+	if (depth <= 0)
+	{
+		return Color{ 0,0,0 };
+	}
+
 	HitRecord hit;
 	if (GetFirstRayHit(ray, world, Interval{ 0, infinity }, hit))
 	{
-		// Colorize each point based on the normals
-		return 0.5 * (hit.normal + Color(1.0, 1.0, 1.0));
+		// Use 50% of color from the first bounce
+		const Vec3 direction = RandomVectorOnHemisphere(hit.normal);
+		return 0.5 * CalculateRayColor(Ray{ hit.point, direction }, world, depth - 1);
 	}
 
 	const Vec3 UnitDir = UnitVector(ray.Direction());
@@ -122,7 +127,6 @@ Color CalculateRayColor(const Ray& ray, const World& world)
 Vec3 GenerateSampleSquare()
 {
 	// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
-	//return Vec3{ RandomValue<double>(0.0, 1.0) - 0.5, RandomValue<double>(0.0, 1.0) - 0.5, 0};
 	return Vec3{ RandomValue<double>(-0.5, 0.5), RandomValue<double>(-0.5, 0.5), 0 };
 }
 
@@ -176,6 +180,8 @@ int main()
 	const int32 samplesPerPixel = (int32)std::size(sampleOffsets);
 	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
+	constexpr int32 maxBounces = 5;
+
 	const uint32 buffSize = imageWidth * imageHeight;
 	uint8* buffer = new uint8[buffSize * 3];
 	uint32 writeIndex = 0;
@@ -196,7 +202,7 @@ int main()
 				const Vec3 rayDir = pixelCenter - rayOrigin;
 				const Ray ray{ rayOrigin, rayDir };
 
-				pixelColor += CalculateRayColor(ray, world);
+				pixelColor += CalculateRayColor(ray, world, maxBounces);
 			}
 
 			pixelColor *= pixelSampleScale;

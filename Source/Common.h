@@ -38,7 +38,7 @@ constexpr bool IsValueInRange(double value, double min, double max)
 template<typename T = double>
 inline T RandomValue(T min = T(0), T max = T(1))
 {
-	static std::uniform_real_distribution<T> distribution{ min, max };
+	std::uniform_real_distribution<T> distribution{ min, max };
 	static std::mt19937 generator;
 	return distribution(generator);
 }
