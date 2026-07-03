@@ -159,7 +159,21 @@ int main()
 	printf("Aspect ratio: %.2f | Image W: %d H: %d | Viewport H: %.2f W: %.2f", aspectRatio, imageWidth, imageHeight, viewportWidth, viewportHeight);
 
 	// Render
-	const int32 samplesPerPixel = 100;
+	//const int32 samplesPerPixel = 100;
+	const Vec3 sampleOffsets[] =
+	{
+		Vec3{0.5, 0, 0}, // top
+		Vec3{0, 0.5, 0}, // right
+		Vec3{0, -0.5, 0}, // bottom
+		Vec3{-0.5, 0, 0}, // left
+
+		Vec3{0.5, 0.5, 0}, // top right
+		Vec3{0.5, -0.5, 0}, // bottom right
+		Vec3{-0.5, -0.5, 0}, // bottom left
+		Vec3{-0.5, 0.5, 0}, // top left
+	};
+
+	const int32 samplesPerPixel = (int32)std::size(sampleOffsets);
 	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
 	const uint32 buffSize = imageWidth * imageHeight;
@@ -173,7 +187,8 @@ int main()
 			for (int32 sample = 0; sample < samplesPerPixel; ++sample)
 			{
 				// Construct a camera ray directed at a randomly sampled point around the pixel location x,y.
-				const Vec3 offset = GenerateSampleSquare();
+				//const Vec3 offset = GenerateSampleSquare();
+				const Vec3 offset = sampleOffsets[sample];
 				const Vec3 pixelCenter = pixel00Pos 
 					+ ((x + offset.x) * pixelDeltaU) 
 					+ ((y + offset.y) * pixelDeltaV);
