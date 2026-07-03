@@ -53,8 +53,25 @@ void GenerateTestImage()
 	delete[] buffer;
 }
 
+bool DoesRayIntersectSphere(const Ray& ray, const Point3& center, double radius)
+{
+	const Vec3 rayToSphere = center - ray.Origin();
+	const double a = DotProduct(ray.Direction(), ray.Direction());
+	const double b = -2.0 * DotProduct(ray.Direction(), rayToSphere);
+	const double c = DotProduct(rayToSphere, rayToSphere) - (radius * radius);
+	const double discriminant = b * b - 4 * a * c;
+	// TODO: doesn't currently distinguish between objects in front of camera vs behind.
+	return discriminant >= 0; // 0 roots means 1 intersection, 2 roots meaning 2
+}
+
 Color CalculateRayColor(const Ray& ray)
 {
+	// Hard coded sphere for now
+	if (DoesRayIntersectSphere(ray, Point3{ 0,0,-1 }, 0.5))
+	{
+		return Color{ 1.0, 0.0, 0.0 };
+	}
+
 	const Vec3 UnitDir = UnitVector(ray.Direction());
 	const double a = 0.5 * (UnitDir.y + 1.0);
 	return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * (Color(0.5, 0.7, 1.0));
