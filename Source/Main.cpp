@@ -53,23 +53,32 @@ void GenerateTestImage()
 	delete[] buffer;
 }
 
-bool DoesRayIntersectSphere(const Ray& ray, const Point3& center, double radius)
+double DoesRayIntersectSphere(const Ray& ray, const Point3& center, double radius)
 {
 	const Vec3 rayToSphere = center - ray.Origin();
 	const double a = DotProduct(ray.Direction(), ray.Direction());
 	const double b = -2.0 * DotProduct(ray.Direction(), rayToSphere);
 	const double c = DotProduct(rayToSphere, rayToSphere) - (radius * radius);
 	const double discriminant = b * b - 4 * a * c;
-	// TODO: doesn't currently distinguish between objects in front of camera vs behind.
-	return discriminant >= 0; // 0 roots means 1 intersection, 2 roots meaning 2
+	// 0 means no intersections, 1 solution means single intersection (tangent), 2+ means 2 intersections (penetration).
+	if (discriminant < 0)
+	{
+		return -1.0;
+	}
+	// Return the first root as it's the point where the ray first hits the sphere.
+	return (-b - std::sqrt(discriminant)) / (2.0 * a);
 }
 
 Color CalculateRayColor(const Ray& ray)
 {
 	// Hard coded sphere for now
-	if (DoesRayIntersectSphere(ray, Point3{ 0,0,-1 }, 0.5))
+	const Point3 SphereCenter{ 0,0,-1 };
+	if (double t = DoesRayIntersectSphere(ray, SphereCenter, 0.5);
+		t > 0.0)
 	{
-		return Color{ 1.0, 0.0, 0.0 };
+		// Colorize each point based on the normals
+		const Vec3 hitNormal = UnitVector(ray.At(t) - SphereCenter);
+		return 0.5 * Color{ hitNormal.x + 1, hitNormal.y + 1, hitNormal.z + 1 };
 	}
 
 	const Vec3 UnitDir = UnitVector(ray.Direction());
