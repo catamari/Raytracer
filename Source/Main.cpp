@@ -1,11 +1,106 @@
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <iostream>
+#include <vector>
 
 #include "Common.h"
 #include "Color.h"
 #include "Vec3.h"
 #include "Ray.h"
+
+enum class ShapeType : uint8
+{
+	Sphere
+};
+
+struct Shape
+{
+	ShapeType type;
+	Point3 center;
+	double radius;
+};
+
+struct HitRecord
+{
+	Point3 point;
+	Vec3 normal;
+	double t;
+	bool isFrontFace;
+};
+
+struct World
+{
+	std::vector<Shape> shapes;
+};
+
+bool DoesRayHitShape(const Ray& ray, const Shape& shape, double tMin, double tMax, HitRecord& outHitRecord)
+{
+	if (shape.type == ShapeType::Sphere)
+	{
+		const Vec3 rayToSphere = shape.center - ray.Origin();
+		const double a = ray.Direction().LengthSquared();
+		const double h = DotProduct(ray.Direction(), rayToSphere);
+		const double c = rayToSphere.LengthSquared() - (shape.radius * shape.radius);
+		const double discriminant = h * h - a * c;
+		if (discriminant < 0)
+		{
+			return false;
+		}
+
+		const auto CalcRoot = [&]() -> std::optional<double>
+		{
+			const double sqrtd = std::sqrt(discriminant);
+			const double root1 = (h - sqrtd) / a;
+			const double root2 = (h + sqrtd) / a;
+			if (IsValueInRange(root1, tMin, tMax))
+			{
+				return root1;
+			}
+			else if (IsValueInRange(root2, tMin, tMax))
+			{
+				return root2;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		};
+
+		const std::optional<double> root = CalcRoot();
+		if (!root.has_value())
+		{
+			return false;
+		}
+
+		const double t = root.value();
+		const Point3 hitPoint = ray.At(root.value());
+		const Vec3 outwardNormal = (hitPoint - shape.center) / shape.radius;
+		const bool frontFace = DotProduct(ray.Direction(), outwardNormal) < 0;
+
+		outHitRecord.t = t;
+		outHitRecord.point = hitPoint;
+		outHitRecord.normal = frontFace ? outwardNormal : -outwardNormal;
+		outHitRecord.isFrontFace = frontFace;
+		return true;
+	}
+	return false;
+}
+
+bool GetFirstRayHit(const Ray& ray, const World& world, double tMin, double tMax, HitRecord& firstHit)
+{
+	double closestHit = tMax;
+	bool anyHits = false;
+	for (const Shape& shape : world.shapes)
+	{
+		if (DoesRayHitShape(ray, shape, tMin, closestHit, firstHit))
+		{
+			anyHits = true;
+			closestHit = firstHit.t;
+		}
+	}
+	return anyHits;
+}
 
 void BufferToPPM(const char* filename, uint32 width, uint32 height, const uint8* buffer)
 {
@@ -53,32 +148,14 @@ void GenerateTestImage()
 	delete[] buffer;
 }
 
-double DoesRayIntersectSphere(const Ray& ray, const Point3& center, double radius)
-{
-	const Vec3 rayToSphere = center - ray.Origin();
-	const double a = ray.Direction().LengthSquared();
-	const double h = DotProduct(ray.Direction(), rayToSphere);
-	const double c = rayToSphere.LengthSquared() - (radius * radius);
-	const double discriminant = h * h - a * c;
-	// 0 means no intersections, 1 solution means single intersection (tangent), 2+ means 2 intersections (penetration).
-	if (discriminant < 0)
-	{
-		return -1.0;
-	}
-	// Return the first root as it's the point where the ray first hits the sphere.
-	return (h - std::sqrt(discriminant)) / a;
-}
-
-Color CalculateRayColor(const Ray& ray)
+Color CalculateRayColor(const Ray& ray, const World& world)
 {
 	// Hard coded sphere for now
-	const Point3 SphereCenter{ 0,0,-1 };
-	if (double t = DoesRayIntersectSphere(ray, SphereCenter, 0.5);
-		t > 0.0)
+	HitRecord hit;
+	if (GetFirstRayHit(ray, world, 0, infinity, hit))
 	{
 		// Colorize each point based on the normals
-		const Vec3 hitNormal = UnitVector(ray.At(t) - SphereCenter);
-		return 0.5 * Color{ hitNormal.x + 1, hitNormal.y + 1, hitNormal.z + 1 };
+		return 0.5 * (hit.normal + Color(1.0, 1.0, 1.0));
 	}
 
 	const Vec3 UnitDir = UnitVector(ray.Direction());
@@ -96,6 +173,9 @@ int main()
 	int32 imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
 	imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
 
+	World world;
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,0,-1}, .radius = 0.5 });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,-100.5,-1}, .radius = 100 });
 
 	// Camera
 	const double focalLength = 1.0;
@@ -129,7 +209,7 @@ int main()
 			const Vec3 rayDir = pixelCenter - cameraPos;
 			Ray ray{ cameraPos, rayDir };
 
-			Color pixelColor = CalculateRayColor(ray);
+			Color pixelColor = CalculateRayColor(ray, world);
 
 			const uint32 index = (y * imageWidth) + x;
 			ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
