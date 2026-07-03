@@ -8,9 +8,9 @@
 
 using Color = Vec3;
 
-inline void ColorToRGB(const Color& c, uint8& r, uint8& g, uint8& b)
+constexpr void ColorToRGB(const Color& c, uint8& r, uint8& g, uint8& b)
 {
-	static constexpr Interval intensity{ 0.0, 0.999 };
+	constexpr Interval intensity{ 0.0, 0.999 };
 
 	// Scale 0-1 to 0-255 rgb range.
 	r = static_cast<int32>(256 * intensity.Clamp(c.r));

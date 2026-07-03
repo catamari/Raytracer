@@ -23,19 +23,19 @@ public:
 		double components[3];
 	};
 
-	Vec3() : x(0.0), y(0.0), z(0.0) {}
-	Vec3(double inX, double inY, double inZ)
+	constexpr Vec3() : x(0.0), y(0.0), z(0.0) {}
+	constexpr Vec3(double inX, double inY, double inZ)
 		: x(inX)
 		, y(inY)
 		, z(inZ)
 	{
 	}
 
-	Vec3 operator-() const { return { -x, -y, -z }; }
-	double operator[](int index) const { return components[index]; }
-	double& operator[](int index) { return components[index]; }
+	constexpr Vec3 operator-() const { return { -x, -y, -z }; }
+	constexpr double operator[](int index) const { return components[index]; }
+	constexpr double& operator[](int index) { return components[index]; }
 
-	Vec3& operator+=(const Vec3& rhs)
+	constexpr Vec3& operator+=(const Vec3& rhs)
 	{
 		x += rhs.x;
 		y += rhs.y;
@@ -43,7 +43,7 @@ public:
 		return *this;
 	}
 
-	Vec3& operator*=(const Vec3& rhs)
+	constexpr Vec3& operator*=(const Vec3& rhs)
 	{
 		x *= rhs.x;
 		y *= rhs.y;
@@ -51,7 +51,7 @@ public:
 		return *this;
 	}
 
-	Vec3& operator*=(double s)
+	constexpr Vec3& operator*=(double s)
 	{
 		x *= s;
 		y *= s;
@@ -59,17 +59,18 @@ public:
 		return *this;
 	}
 
-	Vec3& operator/=(double t)
+	constexpr Vec3& operator/=(double t)
 	{
 		return *this *= 1.0 / t;
 	}
 
 	double Length() const
 	{
+		// std::sqrt not constexpr until c++26 :(
 		return std::sqrt(LengthSquared());
 	}
 
-	double LengthSquared() const
+	constexpr double LengthSquared() const
 	{
 		return x * x + y * y + z * z;
 	}
@@ -82,44 +83,44 @@ inline std::ostream& operator<<(std::ostream& out, const Vec3& vec)
 	return out << vec.x << ' ' << vec.y << ' ' << vec.z;
 }
 
-inline Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
+constexpr Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
 {
 	return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z };
 }
 
-inline Vec3 operator-(const Vec3& lhs, const Vec3& rhs)
+constexpr Vec3 operator-(const Vec3& lhs, const Vec3& rhs)
 {
 	return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z };
 }
 
-inline Vec3 operator*(const Vec3& lhs, const Vec3& rhs)
+constexpr Vec3 operator*(const Vec3& lhs, const Vec3& rhs)
 {
 	return { lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z };
 }
 
-inline Vec3 operator*(const Vec3& lhs, double s)
+constexpr Vec3 operator*(const Vec3& lhs, double s)
 {
 	return { lhs.x * s, lhs.y * s, lhs.z * s};
 }
 
-inline Vec3 operator*(double s, const Vec3& vec)
+constexpr Vec3 operator*(double s, const Vec3& vec)
 {
 	return vec * s;
 }
 
-inline Vec3 operator/(const Vec3& vec, double s)
+constexpr Vec3 operator/(const Vec3& vec, double s)
 {
 	return (1.0 / s) * vec;
 }
 
-inline double DotProduct(const Vec3& lhs, const Vec3& rhs)
+constexpr double DotProduct(const Vec3& lhs, const Vec3& rhs)
 {
 	return lhs.x * rhs.x
 		+ lhs.y * rhs.y
 		+ lhs.z * rhs.z;
 }
 
-inline Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
+constexpr Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
 {
 	return
 	{
@@ -129,7 +130,7 @@ inline Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
 	};
 }
 
-inline Vec3 UnitVector(const Vec3& vec)
+constexpr Vec3 UnitVector(const Vec3& vec)
 {
 	return vec / vec.Length();
 }

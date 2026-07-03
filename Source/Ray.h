@@ -6,16 +6,16 @@
 class Ray
 {
 public:
-	Ray() = default;
-	Ray(const Point3& inOrigin, const Vec3& inDirection)
+	constexpr Ray() = default;
+	constexpr Ray(const Point3& inOrigin, const Vec3& inDirection)
 		: origin(inOrigin)
 		, direction(inDirection)
 	{}
 
-	const Point3& Origin() const { return origin; }
-	const Vec3& Direction() const { return direction; }
+	constexpr const Point3& Origin() const { return origin; }
+	constexpr const Vec3& Direction() const { return direction; }
 
-	Point3 At(double t) const
+	constexpr Point3 At(double t) const
 	{
 		return origin + (direction * t);
 	}
