@@ -112,7 +112,8 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	}
 
 	HitRecord hit;
-	if (GetFirstRayHit(ray, world, Interval{ 0, infinity }, hit))
+	// Hack: add slight min bias to prevent re-intersecting with the same surface due to floating point error (shadow acne).
+	if (GetFirstRayHit(ray, world, Interval{ 0.001, infinity }, hit))
 	{
 		// Use 50% of color from the first bounce
 		const Vec3 direction = RandomVectorOnHemisphere(hit.normal);
