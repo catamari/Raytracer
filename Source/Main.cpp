@@ -56,17 +56,17 @@ void GenerateTestImage()
 double DoesRayIntersectSphere(const Ray& ray, const Point3& center, double radius)
 {
 	const Vec3 rayToSphere = center - ray.Origin();
-	const double a = DotProduct(ray.Direction(), ray.Direction());
-	const double b = -2.0 * DotProduct(ray.Direction(), rayToSphere);
-	const double c = DotProduct(rayToSphere, rayToSphere) - (radius * radius);
-	const double discriminant = b * b - 4 * a * c;
+	const double a = ray.Direction().LengthSquared();
+	const double h = DotProduct(ray.Direction(), rayToSphere);
+	const double c = rayToSphere.LengthSquared() - (radius * radius);
+	const double discriminant = h * h - a * c;
 	// 0 means no intersections, 1 solution means single intersection (tangent), 2+ means 2 intersections (penetration).
 	if (discriminant < 0)
 	{
 		return -1.0;
 	}
 	// Return the first root as it's the point where the ray first hits the sphere.
-	return (-b - std::sqrt(discriminant)) / (2.0 * a);
+	return (h - std::sqrt(discriminant)) / a;
 }
 
 Color CalculateRayColor(const Ray& ray)
