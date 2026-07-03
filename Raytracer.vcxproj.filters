@@ -35,5 +35,8 @@
     <ClInclude Include="Source\Image.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Interval.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

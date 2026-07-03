@@ -7,6 +7,7 @@
 #include "Common.h"
 #include "Color.h"
 #include "Image.h"
+#include "Interval.h"
 #include "Vec3.h"
 #include "Ray.h"
 
@@ -35,7 +36,7 @@ struct World
 	std::vector<Shape> shapes;
 };
 
-bool DoesRayHitShape(const Ray& ray, const Shape& shape, double tMin, double tMax, HitRecord& outHitRecord)
+bool DoesRayHitShape(const Ray& ray, const Shape& shape, Interval interval, HitRecord& outHitRecord)
 {
 	if (shape.type == ShapeType::Sphere)
 	{
@@ -54,11 +55,11 @@ bool DoesRayHitShape(const Ray& ray, const Shape& shape, double tMin, double tMa
 			const double sqrtd = std::sqrt(discriminant);
 			const double root1 = (h - sqrtd) / a;
 			const double root2 = (h + sqrtd) / a;
-			if (IsValueInRange(root1, tMin, tMax))
+			if (interval.Contains(root1))
 			{
 				return root1;
 			}
-			else if (IsValueInRange(root2, tMin, tMax))
+			else if (interval.Contains(root2))
 			{
 				return root2;
 			}
@@ -88,13 +89,13 @@ bool DoesRayHitShape(const Ray& ray, const Shape& shape, double tMin, double tMa
 	return false;
 }
 
-bool GetFirstRayHit(const Ray& ray, const World& world, double tMin, double tMax, HitRecord& firstHit)
+bool GetFirstRayHit(const Ray& ray, const World& world, Interval interval, HitRecord& firstHit)
 {
-	double closestHit = tMax;
+	double closestHit = interval.max;
 	bool anyHits = false;
 	for (const Shape& shape : world.shapes)
 	{
-		if (DoesRayHitShape(ray, shape, tMin, closestHit, firstHit))
+		if (DoesRayHitShape(ray, shape, Interval{ interval.min, closestHit }, firstHit))
 		{
 			anyHits = true;
 			closestHit = firstHit.t;
@@ -107,7 +108,7 @@ Color CalculateRayColor(const Ray& ray, const World& world)
 {
 	// Hard coded sphere for now
 	HitRecord hit;
-	if (GetFirstRayHit(ray, world, 0, infinity, hit))
+	if (GetFirstRayHit(ray, world, Interval{ 0, infinity }, hit))
 	{
 		// Colorize each point based on the normals
 		return 0.5 * (hit.normal + Color(1.0, 1.0, 1.0));
