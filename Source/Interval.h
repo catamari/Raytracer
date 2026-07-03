@@ -29,6 +29,13 @@ struct Interval
 		return IsValueInRange<false>(value, min, max);
 	}
 
+	constexpr double Clamp(double value) const
+	{
+		if (value < min) return min;
+		if (value > max) return max;
+		return value;
+	}
+
 	static constexpr Interval Empty()
 	{
 		return {};

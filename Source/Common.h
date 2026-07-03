@@ -1,6 +1,9 @@
 #pragma once
 
 #include <limits>
+#include <cstdlib>
+#include <random>
+#include <concepts>
 
 using int8 = char;
 using int16 = short;
@@ -30,4 +33,12 @@ constexpr bool IsValueInRange(double value, double min, double max)
 	{
 		return value > min && value < max;
 	}
+}
+
+template<typename T = double>
+inline T RandomValue(T min = T(0), T max = T(1))
+{
+	static std::uniform_real_distribution<T> distribution{ min, max };
+	static std::mt19937 generator;
+	return distribution(generator);
 }

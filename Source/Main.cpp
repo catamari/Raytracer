@@ -119,11 +119,18 @@ Color CalculateRayColor(const Ray& ray, const World& world)
 	return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * (Color(0.5, 0.7, 1.0));
 }
 
+Vec3 GenerateSampleSquare()
+{
+	// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+	//return Vec3{ RandomValue<double>(0.0, 1.0) - 0.5, RandomValue<double>(0.0, 1.0) - 0.5, 0};
+	return Vec3{ RandomValue<double>(-0.5, 0.5), RandomValue<double>(-0.5, 0.5), 0 };
+}
+
 int main()
 {
 	// Image
 	const double aspectRatio = 16.0 / 9.0;
-	const int32 imageWidth = 400;
+	const int32 imageWidth = 800;
 	int32 imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
 	imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
 
@@ -152,6 +159,9 @@ int main()
 	printf("Aspect ratio: %.2f | Image W: %d H: %d | Viewport H: %.2f W: %.2f", aspectRatio, imageWidth, imageHeight, viewportWidth, viewportHeight);
 
 	// Render
+	const int32 samplesPerPixel = 100;
+	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
+
 	const uint32 buffSize = imageWidth * imageHeight;
 	uint8* buffer = new uint8[buffSize * 3];
 	uint32 writeIndex = 0;
@@ -159,11 +169,22 @@ int main()
 	{
 		for (int32 x = 0; x < imageWidth; ++x)
 		{
-			const Vec3 pixelCenter = pixel00Pos + (x * pixelDeltaU) + (y * pixelDeltaV);
-			const Vec3 rayDir = pixelCenter - cameraPos;
-			Ray ray{ cameraPos, rayDir };
+			Color pixelColor{0,0,0};
+			for (int32 sample = 0; sample < samplesPerPixel; ++sample)
+			{
+				// Construct a camera ray directed at a randomly sampled point around the pixel location x,y.
+				const Vec3 offset = GenerateSampleSquare();
+				const Vec3 pixelCenter = pixel00Pos 
+					+ ((x + offset.x) * pixelDeltaU) 
+					+ ((y + offset.y) * pixelDeltaV);
+				const Vec3 rayOrigin = cameraPos;
+				const Vec3 rayDir = pixelCenter - rayOrigin;
+				const Ray ray{ rayOrigin, rayDir };
 
-			Color pixelColor = CalculateRayColor(ray, world);
+				pixelColor += CalculateRayColor(ray, world);
+			}
+
+			pixelColor *= pixelSampleScale;
 
 			const int32 index = (y * imageWidth) + x;
 			ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
