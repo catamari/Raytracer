@@ -152,9 +152,8 @@ int main()
 	};
 	const Material mat_leftSphere
 	{
-		.type = MaterialType::Metal,
-		.albedo = Color(0.8, 0.8, 0.8),
-		.fuzz = 0.3
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.5
 	};
 	const Material mat_rightSphere
 	{

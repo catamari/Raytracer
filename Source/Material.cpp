@@ -30,6 +30,18 @@ bool ScatterMetal(const Material& mat, const Ray& ray, const HitRecord& hit, Col
 	return DotProduct(scattered, hit.normal) > 0.0;
 }
 
+bool ScatterDielectric(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
+{
+	outAttenuation = Color(1.0, 1.0, 1.0);
+	const double refractiveIndex = hit.isFrontFace ? (1.0 / mat.refractiveIndex) : mat.refractiveIndex;
+
+	const Vec3 unitDirection = UnitVector(ray.Direction());
+	const Vec3 refracted = Refract(unitDirection, hit.normal, refractiveIndex);
+
+	outScattered = Ray{ hit.point, refracted };
+	return true;
+}
+
 bool Scatter(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
 {
 	switch (mat.type)
@@ -39,6 +51,9 @@ bool Scatter(const Material& mat, const Ray& ray, const HitRecord& hit, Color& o
 
 	case MaterialType::Metal:
 		return ScatterMetal(mat, ray, hit, outAttenuation, outScattered);
+
+	case MaterialType::Dielectric:
+		return ScatterDielectric(mat, ray, hit, outAttenuation, outScattered);
 	}
 	return false;
 }

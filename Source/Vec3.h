@@ -148,6 +148,14 @@ constexpr Vec3 Reflect(const Vec3& v, const Vec3& n)
 	return v - 2 * DotProduct(v, n) * n;
 }
 
+inline Vec3 Refract(const Vec3& uv, const Vec3& n, double etaiOverEtat)
+{
+	const double cosTheta = std::fmin(DotProduct(-uv, n), 1.0);
+	const Vec3 perpendicular = etaiOverEtat * (uv + cosTheta * n);
+	const Vec3 parallel = -std::sqrt(std::fabs(1.0 - perpendicular.LengthSquared())) * n;
+	return perpendicular + parallel;
+}
+
 constexpr Vec3 UnitVector(const Vec3& vec)
 {
 	return vec / vec.Length();
