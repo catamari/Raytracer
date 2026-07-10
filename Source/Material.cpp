@@ -36,9 +36,21 @@ bool ScatterDielectric(const Material& mat, const Ray& ray, const HitRecord& hit
 	const double refractiveIndex = hit.isFrontFace ? (1.0 / mat.refractiveIndex) : mat.refractiveIndex;
 
 	const Vec3 unitDirection = UnitVector(ray.Direction());
-	const Vec3 refracted = Refract(unitDirection, hit.normal, refractiveIndex);
+	const double cosTheta = std::fmin(DotProduct(-unitDirection, hit.normal), 1.0);
+	const double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta); // trigonometric identity
+	const bool canRefract = (refractiveIndex * sinTheta) < 1.0;
+	Vec3 direction;
+	if (canRefract)
+	{
+		direction = Refract(unitDirection, hit.normal, refractiveIndex);
+	}
+	else
+	{
+		// Total internal reflection
+		direction = Reflect(unitDirection, hit.normal);
+	}
 
-	outScattered = Ray{ hit.point, refracted };
+	outScattered = Ray{ hit.point, direction };
 	return true;
 }
 

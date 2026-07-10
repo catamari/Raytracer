@@ -153,7 +153,7 @@ int main()
 	const Material mat_leftSphere
 	{
 		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.5
+		.refractiveIndex = 1.0 / 1.333
 	};
 	const Material mat_rightSphere
 	{
