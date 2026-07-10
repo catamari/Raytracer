@@ -153,12 +153,14 @@ int main()
 	const Material mat_leftSphere
 	{
 		.type = MaterialType::Metal,
-		.albedo = Color(0.8, 0.8, 0.8)
+		.albedo = Color(0.8, 0.8, 0.8),
+		.fuzz = 0.3
 	};
 	const Material mat_rightSphere
 	{
 		.type = MaterialType::Metal,
-		.albedo = Color(0.8, 0.6, 0.2)
+		.albedo = Color(0.8, 0.6, 0.2),
+		.fuzz = 1.0
 	};
 
 	World world;

@@ -22,10 +22,12 @@ bool ScatterLambert(const Material& mat, const Ray& ray, const HitRecord& hit, C
 
 bool ScatterMetal(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
 {
+	const double fuzz = mat.fuzz < 1.0 ? mat.fuzz : 1.0;
 	const Vec3 reflected = Reflect(ray.Direction(), hit.normal);
-	outScattered = Ray(hit.point, reflected);
+	const Vec3 scattered = UnitVector(reflected) + (RandomVectorInUnitSphere() * fuzz);
+	outScattered = Ray(hit.point, scattered);
 	outAttenuation = mat.albedo;
-	return true;
+	return DotProduct(scattered, hit.normal) > 0.0;
 }
 
 bool Scatter(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
