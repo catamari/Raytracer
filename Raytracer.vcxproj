@@ -133,12 +133,15 @@
   <ItemGroup>
     <ClCompile Include="Source\Image.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Material.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Color.h" />
     <ClInclude Include="Source\Common.h" />
+    <ClInclude Include="Source\HitRecord.h" />
     <ClInclude Include="Source\Image.h" />
     <ClInclude Include="Source\Interval.h" />
+    <ClInclude Include="Source\Material.h" />
     <ClInclude Include="Source\Ray.h" />
     <ClInclude Include="Source\Vec3.h" />
   </ItemGroup>

@@ -77,6 +77,12 @@ public:
 		return x * x + y * y + z * z;
 	}
 
+	bool IsNearZero() const
+	{
+		constexpr double threshold = 1e-8;
+		return (std::fabs(x) < threshold) && (std::fabs(y) < threshold) && (std::fabs(z) < threshold);
+	}
+
 	static Vec3 Random(double min = 0.0, double max = 1.0)
 	{
 		return { RandomValue(min, max), RandomValue(min, max), RandomValue(min, max) };

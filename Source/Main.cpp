@@ -6,8 +6,10 @@
 
 #include "Common.h"
 #include "Color.h"
+#include "HitRecord.h"
 #include "Image.h"
 #include "Interval.h"
+#include "Material.h"
 #include "Vec3.h"
 #include "Ray.h"
 
@@ -21,14 +23,8 @@ struct Shape
 	ShapeType type;
 	Point3 center;
 	double radius;
-};
 
-struct HitRecord
-{
-	Point3 point;
-	Vec3 normal;
-	double t;
-	bool isFrontFace;
+	const Material* material = nullptr;
 };
 
 struct World
@@ -84,6 +80,7 @@ bool DoesRayHitShape(const Ray& ray, const Shape& shape, Interval interval, HitR
 		outHitRecord.point = hitPoint;
 		outHitRecord.normal = frontFace ? outwardNormal : -outwardNormal;
 		outHitRecord.isFrontFace = frontFace;
+		outHitRecord.material = shape.material;
 		return true;
 	}
 	return false;
@@ -115,11 +112,13 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	// Hack: add slight min bias to prevent re-intersecting with the same surface due to floating point error (shadow acne).
 	if (GetFirstRayHit(ray, world, Interval{ 0.001, infinity }, hit))
 	{
-		// Lambertian reflection - reflected rays are more likely to scatter in a direction near the surface normal.
-		// By offsetting by the hit normal, we're forcing the random unit sphere vector to be within the unit sphere on the outside of the shape.
-		const Vec3 bounceDirection = hit.normal + RandomVectorInUnitSphere();
-		// Use 50% of color from the first bounce.
-		return 0.5 * CalculateRayColor(Ray{ hit.point, bounceDirection }, world, depth - 1);
+		Ray scattered;
+		Color attenuation;
+		if (hit.material && Scatter(*hit.material, ray, hit, attenuation, scattered))
+		{
+			return attenuation * CalculateRayColor(scattered, world, depth - 1);
+		}
+		return Color(0, 0, 0);
 	}
 
 	const Vec3 UnitDir = UnitVector(ray.Direction());
@@ -141,9 +140,15 @@ int main()
 	int32 imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
 	imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
 
+	const Material lambertMat
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.5, 0.5, 0.5)
+	};
+
 	World world;
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,0,-1}, .radius = 0.5 });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,-100.5,-1}, .radius = 100 });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,0,-1}, .radius = 0.5, .material = &lambertMat});
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,-100.5,-1}, .radius = 100, .material = &lambertMat });
 
 	// Camera
 	const double focalLength = 1.0;
