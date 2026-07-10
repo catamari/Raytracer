@@ -20,12 +20,23 @@ bool ScatterLambert(const Material& mat, const Ray& ray, const HitRecord& hit, C
 	return true;
 }
 
+bool ScatterMetal(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
+{
+	const Vec3 reflected = Reflect(ray.Direction(), hit.normal);
+	outScattered = Ray(hit.point, reflected);
+	outAttenuation = mat.albedo;
+	return true;
+}
+
 bool Scatter(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered)
 {
 	switch (mat.type)
 	{
 	case MaterialType::Lambert:
 		return ScatterLambert(mat, ray, hit, outAttenuation, outScattered);
+
+	case MaterialType::Metal:
+		return ScatterMetal(mat, ray, hit, outAttenuation, outScattered);
 	}
 	return false;
 }

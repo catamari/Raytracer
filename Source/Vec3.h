@@ -143,6 +143,11 @@ constexpr Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
 	};
 }
 
+constexpr Vec3 Reflect(const Vec3& v, const Vec3& n)
+{
+	return v - 2 * DotProduct(v, n) * n;
+}
+
 constexpr Vec3 UnitVector(const Vec3& vec)
 {
 	return vec / vec.Length();

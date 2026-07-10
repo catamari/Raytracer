@@ -140,15 +140,32 @@ int main()
 	int32 imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
 	imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
 
-	const Material lambertMat
+	const Material mat_ground
 	{
 		.type = MaterialType::Lambert,
-		.albedo = Color(0.5, 0.5, 0.5)
+		.albedo = Color(0.8, 0.8, 0.0)
+	};
+	const Material mat_centerSphere
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.1, 0.2, 0.5)
+	};
+	const Material mat_leftSphere
+	{
+		.type = MaterialType::Metal,
+		.albedo = Color(0.8, 0.8, 0.8)
+	};
+	const Material mat_rightSphere
+	{
+		.type = MaterialType::Metal,
+		.albedo = Color(0.8, 0.6, 0.2)
 	};
 
 	World world;
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,0,-1}, .radius = 0.5, .material = &lambertMat});
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{0,-100.5,-1}, .radius = 100, .material = &lambertMat });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
 
 	// Camera
 	const double focalLength = 1.0;

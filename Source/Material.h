@@ -8,7 +8,8 @@ struct HitRecord;
 
 enum class MaterialType : uint8
 {
-	Lambert
+	Lambert,
+	Metal
 };
 
 struct Material
