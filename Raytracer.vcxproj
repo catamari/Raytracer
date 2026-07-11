@@ -137,6 +137,7 @@
     <ClCompile Include="Source\Material.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Camera.h" />
     <ClInclude Include="Source\Color.h" />
     <ClInclude Include="Source\Common.h" />
     <ClInclude Include="Source\HitRecord.h" />

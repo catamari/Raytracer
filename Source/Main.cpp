@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "Camera.h"
 #include "Common.h"
 #include "Color.h"
 #include "HitRecord.h"
@@ -136,65 +137,61 @@ Vec3 GenerateSampleSquare()
 
 int main()
 {
-	// Image
-	const double aspectRatio = 16.0 / 9.0;
-	const int32 imageWidth = 800;
-	int32 imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
-	imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
+	//const Material mat_ground
+	//{
+	//	.type = MaterialType::Lambert,
+	//	.albedo = Color(0.8, 0.8, 0.0)
+	//};
+	//const Material mat_centerSphere
+	//{
+	//	.type = MaterialType::Lambert,
+	//	.albedo = Color(0.1, 0.2, 0.5)
+	//};
+	//const Material mat_leftSphere
+	//{
+	//	.type = MaterialType::Dielectric,
+	//	.refractiveIndex = 1.5
+	//};
+	//const Material mat_leftBubble
+	//{
+	//	.type = MaterialType::Dielectric,
+	//	.refractiveIndex = 1.0 / 1.5
+	//};
+	//const Material mat_rightSphere
+	//{
+	//	.type = MaterialType::Metal,
+	//	.albedo = Color(0.8, 0.6, 0.2),
+	//	.fuzz = 1.0
+	//};
 
-	const Material mat_ground
-	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0.8, 0.8, 0.0)
-	};
-	const Material mat_centerSphere
-	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0.1, 0.2, 0.5)
-	};
 	const Material mat_leftSphere
 	{
-		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.5
-	};
-	const Material mat_leftBubble
-	{
-		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.0 / 1.5
+		.type = MaterialType::Lambert,
+		.albedo = Color(0, 0, 1)
 	};
 	const Material mat_rightSphere
 	{
-		.type = MaterialType::Metal,
-		.albedo = Color(0.8, 0.6, 0.2),
-		.fuzz = 1.0
+		.type = MaterialType::Lambert,
+		.albedo = Color(0, 1, 0)
 	};
 
 	World world;
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
 
-	// Camera
-	const double focalLength = 1.0;
-	const double viewportHeight = 2.0;
-	const double viewportWidth = viewportHeight * (static_cast<double>(imageWidth) / static_cast<double>(imageHeight));
-	// RHS coords (+Y = up, +X = right, +Z = depth)
-	const Vec3 cameraPos{0.0, 0.0, 0.0};
+	const double R = std::cos(pi / 4.0);
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ -R, 0, -1}, .radius = R, .material = &mat_leftSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ R, 0, -1}, .radius = R, .material = &mat_rightSphere });
 
-	const Vec3 viewportU{ viewportWidth, 0.0, 0.0 }; // Horiztonal viewport edge
-	const Vec3 viewportV{ 0.0, -viewportHeight, 0.0 }; // Vertical viewport edge. Inverted so y = 0 is top left.
-
-	// Space between pixels
-	const Vec3 pixelDeltaU = viewportU / imageWidth;
-	const Vec3 pixelDeltaV = viewportV / imageHeight;
-
-	// Top left pixel location
-	const Vec3 viewportTL = cameraPos - Vec3(0, 0, focalLength) - (viewportU / 2.0) - (viewportV / 2.0);
-	const Vec3 pixel00Pos = viewportTL + (0.5 * (pixelDeltaU + pixelDeltaV));
-
-	printf("Aspect ratio: %.2f | Image W: %d H: %d | Viewport H: %.2f W: %.2f", aspectRatio, imageWidth, imageHeight, viewportWidth, viewportHeight);
+	Camera camera;
+	camera.aspectRatio = 16.0 / 9.0;
+	camera.imageWidth = 800;
+	camera.vfov = 90.0;
+	camera.focalLength = 1.0;
+	camera.Init();
 
 	// Render
 #if RT_USE_NN_SAMPLING
@@ -219,8 +216,10 @@ int main()
 
 	constexpr int32 maxBounces = 50;
 
-	const uint32 buffSize = imageWidth * imageHeight;
-	uint8* buffer = new uint8[buffSize * 3];
+	const int32 imageHeight = camera.GetImageHeight();
+	const int32 imageWidth = camera.GetImageWidth();
+	const uint32 buffSize = imageHeight * imageWidth * 3;
+	uint8* buffer = new uint8[buffSize];
 	uint32 writeIndex = 0;
 	for (int32 y = 0; y < imageHeight; ++y)
 	{
@@ -235,10 +234,8 @@ int main()
 #else
 				const Vec3 offset = GenerateSampleSquare();
 #endif
-				const Vec3 pixelCenter = pixel00Pos 
-					+ ((x + offset.x) * pixelDeltaU) 
-					+ ((y + offset.y) * pixelDeltaV);
-				const Vec3 rayOrigin = cameraPos;
+				const Vec3 pixelCenter = camera.ComputePixelCenter(x, y, offset);
+				const Vec3 rayOrigin = camera.GetCameraPos();
 				const Vec3 rayDir = pixelCenter - rayOrigin;
 				const Ray ray{ rayOrigin, rayDir };
 
@@ -248,6 +245,7 @@ int main()
 			pixelColor *= pixelSampleScale;
 
 			const int32 index = (y * imageWidth) + x;
+			assert(writeIndex >= 0 && (writeIndex + 2) < buffSize);
 			ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
 			writeIndex += 3;
 		}
