@@ -189,3 +189,21 @@ inline Vec3 RandomVectorOnHemisphere(const Vec3& normal)
 		return -unitSphereVec; // Invert to get onto same hemisphere.
 	}
 }
+
+inline Vec3 RandomVectorInUnitDisk()
+{
+	while (true)
+	{
+		const Vec3 vec{ RandomValue(-1.0, 1.0), RandomValue(-1.0, 1.0), 0.0 };
+		if (vec.LengthSquared() < 1)
+		{
+			return vec;
+		}
+	}
+}
+
+inline Vec3 GenerateSampleSquare()
+{
+	// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+	return Vec3{ RandomValue<double>(-0.5, 0.5), RandomValue<double>(-0.5, 0.5), 0 };
+}

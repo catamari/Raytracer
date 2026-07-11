@@ -127,91 +127,69 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * (Color(0.5, 0.7, 1.0));
 }
 
-Vec3 GenerateSampleSquare()
-{
-	// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
-	return Vec3{ RandomValue<double>(-0.5, 0.5), RandomValue<double>(-0.5, 0.5), 0 };
-}
-
-#define RT_USE_NN_SAMPLING 0
-
 int main()
 {
-	//const Material mat_ground
-	//{
-	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0.8, 0.8, 0.0)
-	//};
-	//const Material mat_centerSphere
-	//{
-	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0.1, 0.2, 0.5)
-	//};
-	//const Material mat_leftSphere
-	//{
-	//	.type = MaterialType::Dielectric,
-	//	.refractiveIndex = 1.5
-	//};
-	//const Material mat_leftBubble
-	//{
-	//	.type = MaterialType::Dielectric,
-	//	.refractiveIndex = 1.0 / 1.5
-	//};
-	//const Material mat_rightSphere
-	//{
-	//	.type = MaterialType::Metal,
-	//	.albedo = Color(0.8, 0.6, 0.2),
-	//	.fuzz = 1.0
-	//};
-
-	const Material mat_leftSphere
+	const Material mat_ground
 	{
 		.type = MaterialType::Lambert,
-		.albedo = Color(0, 0, 1)
+		.albedo = Color(0.8, 0.8, 0.0)
+	};
+	const Material mat_centerSphere
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.1, 0.2, 0.5)
+	};
+	const Material mat_leftSphere
+	{
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.5
+	};
+	const Material mat_leftBubble
+	{
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.0 / 1.5
 	};
 	const Material mat_rightSphere
 	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0, 1, 0)
+		.type = MaterialType::Metal,
+		.albedo = Color(0.8, 0.6, 0.2),
+		.fuzz = 1.0
 	};
 
-	World world;
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
+	//const Material mat_leftSphere
+	//{
+	//	.type = MaterialType::Lambert,
+	//	.albedo = Color(0, 0, 1)
+	//};
+	//const Material mat_rightSphere
+	//{
+	//	.type = MaterialType::Lambert,
+	//	.albedo = Color(0, 1, 0)
+	//};
 
-	const double R = std::cos(pi / 4.0);
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ -R, 0, -1}, .radius = R, .material = &mat_leftSphere });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ R, 0, -1}, .radius = R, .material = &mat_rightSphere });
+	World world;
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
+
+	//const double R = std::cos(pi / 4.0);
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ -R, 0, -1}, .radius = R, .material = &mat_leftSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ R, 0, -1}, .radius = R, .material = &mat_rightSphere });
 
 	Camera camera;
 	camera.aspectRatio = 16.0 / 9.0;
 	camera.imageWidth = 800;
-	camera.vfov = 90.0;
+	camera.vfov = 20.0;
+	camera.cameraPos = Vec3{ -2, 2, 1 };
 	camera.lookAt = Vec3{ 0, 0, -1 };
+	camera.defocusAngleDeg = 10.0;
+	camera.focusDistance = 3.4;
 	camera.Init();
 
 	// Render
-#if RT_USE_NN_SAMPLING
-	const Vec3 sampleOffsets[] =
-	{
-		Vec3{0.5, 0, 0}, // top
-		Vec3{0, 0.5, 0}, // right
-		Vec3{0, -0.5, 0}, // bottom
-		Vec3{-0.5, 0, 0}, // left
-
-		Vec3{0.5, 0.5, 0}, // top right
-		Vec3{0.5, -0.5, 0}, // bottom right
-		Vec3{-0.5, -0.5, 0}, // bottom left
-		Vec3{-0.5, 0.5, 0}, // top left
-	};
-
-	const int32 samplesPerPixel = (int32)std::size(sampleOffsets);
-#else
 	const int32 samplesPerPixel = 100;
-#endif
 	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
 	constexpr int32 maxBounces = 50;
@@ -228,17 +206,7 @@ int main()
 			Color pixelColor{0,0,0};
 			for (int32 sample = 0; sample < samplesPerPixel; ++sample)
 			{
-				// Construct a camera ray directed at a randomly sampled point around the pixel location x,y.
-#if RT_USE_NN_SAMPLING
-				const Vec3 offset = sampleOffsets[sample];
-#else
-				const Vec3 offset = GenerateSampleSquare();
-#endif
-				const Vec3 pixelCenter = camera.ComputePixelCenter(x, y, offset);
-				const Vec3 rayOrigin = camera.GetCameraPos();
-				const Vec3 rayDir = pixelCenter - rayOrigin;
-				const Ray ray{ rayOrigin, rayDir };
-
+				const Ray ray = camera.ComputeRay(x, y);
 				pixelColor += CalculateRayColor(ray, world, maxBounces);
 			}
 
