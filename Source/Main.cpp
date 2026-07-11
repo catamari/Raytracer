@@ -129,67 +129,106 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 
 int main()
 {
-	const Material mat_ground
-	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0.8, 0.8, 0.0)
-	};
-	const Material mat_centerSphere
-	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0.1, 0.2, 0.5)
-	};
-	const Material mat_leftSphere
-	{
-		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.5
-	};
-	const Material mat_leftBubble
-	{
-		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.0 / 1.5
-	};
-	const Material mat_rightSphere
-	{
-		.type = MaterialType::Metal,
-		.albedo = Color(0.8, 0.6, 0.2),
-		.fuzz = 1.0
-	};
-
-	//const Material mat_leftSphere
+	//const Material mat_ground
 	//{
 	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0, 0, 1)
+	//	.albedo = Color(0.8, 0.8, 0.0)
+	//};
+	//const Material mat_centerSphere
+	//{
+	//	.type = MaterialType::Lambert,
+	//	.albedo = Color(0.1, 0.2, 0.5)
+	//};
+	//const Material mat_leftSphere
+	//{
+	//	.type = MaterialType::Dielectric,
+	//	.refractiveIndex = 1.5
+	//};
+	//const Material mat_leftBubble
+	//{
+	//	.type = MaterialType::Dielectric,
+	//	.refractiveIndex = 1.0 / 1.5
 	//};
 	//const Material mat_rightSphere
 	//{
-	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0, 1, 0)
+	//	.type = MaterialType::Metal,
+	//	.albedo = Color(0.8, 0.6, 0.2),
+	//	.fuzz = 1.0
 	//};
 
-	World world;
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
-	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
+	//World world;
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
+	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
 
-	//const double R = std::cos(pi / 4.0);
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ -R, 0, -1}, .radius = R, .material = &mat_leftSphere });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ R, 0, -1}, .radius = R, .material = &mat_rightSphere });
+	std::vector<std::unique_ptr<Material>> materals;
+
+	World world;
+
+	const Material mat_ground
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.5, 0.5, 0.5)
+	};
+
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-1000,	0}, .radius = 1000, .material = &mat_ground });
+
+	for (int32 i = -11; i < 11; ++i)
+	{
+		for (int32 j = -11; j < 11; ++j)
+		{
+			const double randomMatRoll = RandomValue();
+			const Point3 center{ i + 0.9 * RandomValue(), 0.2, j + 0.9 * RandomValue() };
+
+			if (Distance(center, Point3{ 4, 0.2, 0 }) > 0.9)
+			{
+				std::unique_ptr<Material> mat;
+				Shape shape;
+				if (randomMatRoll < 0.8)
+				{
+					mat = std::make_unique<Material>(Material::MakeLambert(Color::Random() * Color::Random()));
+					shape = Shape{ .type = ShapeType::Sphere, .center = center, .radius = 0.2, .material = mat.get()};
+				}
+				else if (randomMatRoll < 0.95)
+				{
+					mat = std::make_unique<Material>(Material::MakeMetal(Color::Random(0.5, 1.0), RandomValue(0.0, 0.5)));
+					shape = Shape{ .type = ShapeType::Sphere, .center = center, .radius = 0.2, .material = mat.get() };
+				}
+				else
+				{
+					mat = std::make_unique<Material>(Material::MakeDielectric(1.5)); // glass
+					shape = Shape{ .type = ShapeType::Sphere, .center = center, .radius = 0.2, .material = mat.get() };
+				}
+
+				world.shapes.push_back(std::move(shape));
+				materals.push_back(std::move(mat));
+			}
+		}
+	}
+
+	const Material material1 = Material::MakeDielectric(1.5);
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center{0, 1, 0}, .radius = 1.0, .material = &material1 });
+
+	const Material material2 = Material::MakeLambert(Color(0.4, 0.2, 0.1));
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center{-4, 1, 0}, .radius = 1.0, .material = &material2 });
+
+	const Material material3 = Material::MakeMetal(Color(0.7, 0.6, 0.5), 0.0);
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center{4, 1, 0}, .radius = 1.0, .material = &material3 });
 
 	Camera camera;
 	camera.aspectRatio = 16.0 / 9.0;
-	camera.imageWidth = 800;
+	camera.imageWidth = 1200;
 	camera.vfov = 20.0;
-	camera.cameraPos = Vec3{ -2, 2, 1 };
-	camera.lookAt = Vec3{ 0, 0, -1 };
-	camera.defocusAngleDeg = 10.0;
-	camera.focusDistance = 3.4;
+	camera.cameraPos = Vec3{ 13, 2, 3 };
+	camera.lookAt = Vec3{ 0, 0, 0 };
+	camera.defocusAngleDeg = 0.6;
+	camera.focusDistance = 10.0;
 	camera.Init();
 
 	// Render
-	const int32 samplesPerPixel = 100;
+	const int32 samplesPerPixel = 500;
 	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
 	constexpr int32 maxBounces = 50;

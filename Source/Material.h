@@ -22,6 +22,10 @@ struct Material
 	// Refractive index in vacuum or air, or the ratio of the material's refractive index over
 	// the refractive index of the enclosing media
 	double refractiveIndex = 1.0;
+
+	static Material MakeLambert(const Color& albedo);
+	static Material MakeMetal(const Color& albedo, double fuzz);
+	static Material MakeDielectric(double refractiveIndex);
 };
 
 bool Scatter(const Material& mat, const Ray& ray, const HitRecord& hit, Color& outAttenuation, Ray& outScattered);

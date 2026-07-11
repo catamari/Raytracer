@@ -145,6 +145,16 @@ constexpr Vec3 CrossProduct(const Vec3& lhs, const Vec3& rhs)
 	};
 }
 
+constexpr double DistanceSq(const Vec3& a, const Vec3& b)
+{
+	return (a - b).LengthSquared();
+}
+
+inline double Distance(const Vec3& a, const Vec3& b)
+{
+	return (a - b).Length();
+}
+
 constexpr Vec3 Reflect(const Vec3& v, const Vec3& n)
 {
 	return v - 2 * DotProduct(v, n) * n;
