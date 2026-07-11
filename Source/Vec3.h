@@ -87,6 +87,8 @@ public:
 	{
 		return { RandomValue(min, max), RandomValue(min, max), RandomValue(min, max) };
 	}
+
+	static constexpr Vec3 Zero() { return Vec3{ 0,0,0 }; }
 };
 
 using Point3 = Vec3;

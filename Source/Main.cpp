@@ -190,7 +190,7 @@ int main()
 	camera.aspectRatio = 16.0 / 9.0;
 	camera.imageWidth = 800;
 	camera.vfov = 90.0;
-	camera.focalLength = 1.0;
+	camera.lookAt = Vec3{ 0, 0, -1 };
 	camera.Init();
 
 	// Render

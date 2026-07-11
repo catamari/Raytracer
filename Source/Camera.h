@@ -8,29 +8,40 @@ class Camera
 {
 public:
 	double aspectRatio = 16.0 / 9.0;
-	int32 imageWidth = 800;
 	double vfov = 90.0;
-	double focalLength = 1.0;
+	int32 imageWidth = 800;
+
+	// RHS coords (+Y = up, +X = right, +Z = depth)
+	Point3 cameraPos = Point3::Zero(); // look from
+	Point3 lookAt = Point3::Zero();
+	Vec3 upDir = Vec3{ 0, 1, 0 };
 
 	void Init()
 	{
 		imageHeight = static_cast<int32>(static_cast<double>(imageWidth) / aspectRatio);
 		imageHeight = (imageHeight < 1) ? 1 : imageHeight; // clamp
 
+		double focalLength = (cameraPos - lookAt).Length();
+
 		const double fovTheta = DegreesToRadians(vfov);
 		const double viewHeight = std::tan(fovTheta / 2.0);
 		const double viewportHeight = 2.0 * viewHeight * focalLength;
 		const double viewportWidth = viewportHeight * (static_cast<double>(imageWidth) / static_cast<double>(imageHeight));
 
-		viewportU = Vec3{ viewportWidth, 0.0, 0.0 };
-		viewportV = Vec3{ 0.0, -viewportHeight, 0.0 };
+		// Calc camera basis vectors for camera coordinate frame
+		w = UnitVector(cameraPos - lookAt); // backwards
+		u = UnitVector(CrossProduct(upDir, w)); // right
+		v = CrossProduct(w, u); // up
+
+		const Vec3 viewportU = viewportWidth * u; // Vector across viewport horizontal edge
+		const Vec3 viewportV = viewportHeight * -v; // Vector across viewport vertical edge
 
 		// Space between pixels
 		pixelDeltaU = viewportU / imageWidth;
 		pixelDeltaV = viewportV / imageHeight;
 
 		// Top left pixel location
-		viewportTL = cameraPos - Vec3(0, 0, focalLength) - (viewportU / 2.0) - (viewportV / 2.0);
+		const Vec3 viewportTL = cameraPos - (focalLength * w) - (viewportU / 2.0) - (viewportV / 2.0);
 		pixel00Pos = viewportTL + (0.5 * (pixelDeltaU + pixelDeltaV));
 
 		bInitialized = true;
@@ -54,21 +65,16 @@ public:
 	constexpr int32 GetImageWidth() const { return imageWidth; }
 
 private:
-	int32 imageHeight;
-
-	// RHS coords (+Y = up, +X = right, +Z = depth)
-	Vec3 cameraPos{ 0.0, 0.0, 0.0 };
-
-	Vec3 viewportU; // Horiztonal viewport edge
-	Vec3 viewportV; // Vertical viewport edge. Inverted so y = 0 is top left.
+	Vec3 u, v, w; // Camera frame basis vectors
 
 	// Space between pixels
 	Vec3 pixelDeltaU;
 	Vec3 pixelDeltaV;
 
 	// Top left pixel location
-	Vec3 viewportTL;
 	Vec3 pixel00Pos;
+
+	int32 imageHeight;
 
 	bool bInitialized = false;
 };
