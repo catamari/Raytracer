@@ -130,7 +130,7 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * (Color(0.5, 0.7, 1.0));
 }
 
-#define RT_TEST_SCENE 1
+#define RT_TEST_SCENE 0
 #define RT_MULTI_THREADED 1
 
 int main()
@@ -174,12 +174,7 @@ int main()
 
 	World world;
 
-	const Material mat_ground
-	{
-		.type = MaterialType::Lambert,
-		.albedo = Color(0.5, 0.5, 0.5)
-	};
-
+	const Material mat_ground = Material::MakeLambert(Color(0.5, 0.5, 0.5));
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-1000,	0}, .radius = 1000, .material = &mat_ground });
 
 	for (int32 i = -11; i < 11; ++i)
@@ -238,7 +233,6 @@ int main()
 	// Render
 	constexpr int32 samplesPerPixel = 500;
 	constexpr double pixelSampleScale = 1.0 / (double)samplesPerPixel;
-
 	constexpr int32 maxBounces = 50;
 
 	const int32 imageHeight = camera.GetImageHeight();
@@ -260,31 +254,31 @@ int main()
 	{
 		const int32 numRows = (i < (numThreads - 1)) ? rowsPerThread : rowsPerThread + remainder;
 		threads.emplace_back([&world, &camera, buffer, buffSize, imageWidth, rowsPerThread](int32 id, int32 numRows)
+		{
+			uint32 writeIndex = (id * rowsPerThread) * (uint32)imageWidth * 3;
+			printf("Thread %d starting write at %u\n", id, writeIndex);
+
+			for (int32 row = 0; row < numRows; ++row)
 			{
-				uint32 writeIndex = (id * rowsPerThread) * (uint32)imageWidth * 3;
-				printf("Thread %d starting write at %u\n", id, writeIndex);
-
-				for (int32 row = 0; row < numRows; ++row)
+				const int32 y = (id * rowsPerThread) + row;
+				for (int32 x = 0; x < imageWidth; ++x)
 				{
-					const int32 y = (id * rowsPerThread) + row;
-					for (int32 x = 0; x < imageWidth; ++x)
+					Color pixelColor{ 0,0,0 };
+					for (int32 sample = 0; sample < samplesPerPixel; ++sample)
 					{
-						Color pixelColor{ 0,0,0 };
-						for (int32 sample = 0; sample < samplesPerPixel; ++sample)
-						{
-							const Ray ray = camera.ComputeRay(x, y);
-							pixelColor += CalculateRayColor(ray, world, maxBounces);
-						}
-
-						pixelColor *= pixelSampleScale;
-
-						assert(writeIndex >= 0 && (writeIndex + 2) < buffSize);
-						ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
-						writeIndex += 3;
+						const Ray ray = camera.ComputeRay(x, y);
+						pixelColor += CalculateRayColor(ray, world, maxBounces);
 					}
-				}
 
-			}, i, numRows);
+					pixelColor *= pixelSampleScale;
+
+					assert(writeIndex >= 0 && (writeIndex + 2) < buffSize);
+					ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
+					writeIndex += 3;
+				}
+			}
+
+		}, i, numRows);
 	}
 
 	for (int32 i = 0; i < (int32)numThreads; ++i)

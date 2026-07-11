@@ -5,6 +5,9 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{03d17fa3-7008-4cc0-a1d5-6d0386a9e748}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore">
@@ -23,32 +26,32 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Vec3.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Source\Camera.h">
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Color.h">
-      <Filter>Source Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Common.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Ray.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Image.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Interval.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Material.h">
-      <Filter>Source Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\HitRecord.h">
-      <Filter>Source Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Camera.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Source\Image.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interval.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Material.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ray.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vec3.h">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

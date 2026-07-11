@@ -3,7 +3,6 @@
 #include "Color.h"
 
 #include <cstdio>
-#include <iostream>
 
 void BufferToPPM(const char* filename, uint32 width, uint32 height, const uint8* buffer)
 {
@@ -16,7 +15,6 @@ void BufferToPPM(const char* filename, uint32 width, uint32 height, const uint8*
 		const uint32 size = width * height * 3;
 		for (uint32 i = 0; i < size; i += 3)
 		{
-			//std::clog << "\rScanlines remaining: " << i / 3 / width << std::flush;
 			fprintf_s(f, "%u %u %u\n", buffer[i], buffer[i + 1], buffer[i + 2]);
 		}
 

@@ -3,7 +3,6 @@
 #include "Common.h"
 
 #include <cmath>
-#include <iostream>
 
 class Vec3
 {
@@ -92,11 +91,6 @@ public:
 };
 
 using Point3 = Vec3;
-
-inline std::ostream& operator<<(std::ostream& out, const Vec3& vec)
-{
-	return out << vec.x << ' ' << vec.y << ' ' << vec.z;
-}
 
 constexpr Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
 {
