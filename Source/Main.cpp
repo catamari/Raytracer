@@ -1,7 +1,10 @@
+#include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 #include <optional>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 #include "Camera.h"
@@ -127,42 +130,46 @@ Color CalculateRayColor(const Ray& ray, const World& world, int32 depth)
 	return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * (Color(0.5, 0.7, 1.0));
 }
 
+#define RT_TEST_SCENE 1
+#define RT_MULTI_THREADED 1
+
 int main()
 {
-	//const Material mat_ground
-	//{
-	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0.8, 0.8, 0.0)
-	//};
-	//const Material mat_centerSphere
-	//{
-	//	.type = MaterialType::Lambert,
-	//	.albedo = Color(0.1, 0.2, 0.5)
-	//};
-	//const Material mat_leftSphere
-	//{
-	//	.type = MaterialType::Dielectric,
-	//	.refractiveIndex = 1.5
-	//};
-	//const Material mat_leftBubble
-	//{
-	//	.type = MaterialType::Dielectric,
-	//	.refractiveIndex = 1.0 / 1.5
-	//};
-	//const Material mat_rightSphere
-	//{
-	//	.type = MaterialType::Metal,
-	//	.albedo = Color(0.8, 0.6, 0.2),
-	//	.fuzz = 1.0
-	//};
+#if RT_TEST_SCENE
+	const Material mat_ground
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.8, 0.8, 0.0)
+	};
+	const Material mat_centerSphere
+	{
+		.type = MaterialType::Lambert,
+		.albedo = Color(0.1, 0.2, 0.5)
+	};
+	const Material mat_leftSphere
+	{
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.5
+	};
+	const Material mat_leftBubble
+	{
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.0 / 1.5
+	};
+	const Material mat_rightSphere
+	{
+		.type = MaterialType::Metal,
+		.albedo = Color(0.8, 0.6, 0.2),
+		.fuzz = 1.0
+	};
 
-	//World world;
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
-	//world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
-
+	World world;
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
+#else // RT_TEST_SCENE
 	std::vector<std::unique_ptr<Material>> materals;
 
 	World world;
@@ -216,6 +223,7 @@ int main()
 
 	const Material material3 = Material::MakeMetal(Color(0.7, 0.6, 0.5), 0.0);
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center{4, 1, 0}, .radius = 1.0, .material = &material3 });
+#endif // RT_TEST_SCENE
 
 	Camera camera;
 	camera.aspectRatio = 16.0 / 9.0;
@@ -228,8 +236,8 @@ int main()
 	camera.Init();
 
 	// Render
-	const int32 samplesPerPixel = 500;
-	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
+	constexpr int32 samplesPerPixel = 500;
+	constexpr double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
 	constexpr int32 maxBounces = 50;
 
@@ -237,6 +245,54 @@ int main()
 	const int32 imageWidth = camera.GetImageWidth();
 	const uint32 buffSize = imageHeight * imageWidth * 3;
 	uint8* buffer = new uint8[buffSize];
+	std::memset(buffer, 0, buffSize);
+
+	const auto startTime = std::chrono::steady_clock::now();
+
+#if RT_MULTI_THREADED
+	const int32 numThreads = (int32)std::thread::hardware_concurrency();
+	const int32 rowsPerThread = imageHeight / numThreads;
+	const int32 remainder = imageHeight % numThreads;
+
+	std::vector<std::thread> threads;
+	threads.reserve(numThreads);
+	for (int32 i = 0; i < numThreads; ++i)
+	{
+		const int32 numRows = (i < (numThreads - 1)) ? rowsPerThread : rowsPerThread + remainder;
+		threads.emplace_back([&world, &camera, buffer, buffSize, imageWidth, rowsPerThread](int32 id, int32 numRows)
+			{
+				uint32 writeIndex = (id * rowsPerThread) * (uint32)imageWidth * 3;
+				printf("Thread %d starting write at %u\n", id, writeIndex);
+
+				for (int32 row = 0; row < numRows; ++row)
+				{
+					const int32 y = (id * rowsPerThread) + row;
+					for (int32 x = 0; x < imageWidth; ++x)
+					{
+						Color pixelColor{ 0,0,0 };
+						for (int32 sample = 0; sample < samplesPerPixel; ++sample)
+						{
+							const Ray ray = camera.ComputeRay(x, y);
+							pixelColor += CalculateRayColor(ray, world, maxBounces);
+						}
+
+						pixelColor *= pixelSampleScale;
+
+						assert(writeIndex >= 0 && (writeIndex + 2) < buffSize);
+						ColorToRGB(pixelColor, buffer[writeIndex], buffer[writeIndex + 1], buffer[writeIndex + 2]);
+						writeIndex += 3;
+					}
+				}
+
+			}, i, numRows);
+	}
+
+	for (int32 i = 0; i < (int32)numThreads; ++i)
+	{
+		printf("Waiting for thread %d to join...\n", i);
+		threads[i].join();
+	}
+#else // RT_MULTI_THREADED
 	uint32 writeIndex = 0;
 	for (int32 y = 0; y < imageHeight; ++y)
 	{
@@ -257,8 +313,17 @@ int main()
 			writeIndex += 3;
 		}
 	}
+#endif 
 
-	BufferToPPM("Frame.ppm", imageWidth, imageHeight, buffer);
+	const auto endTime = std::chrono::steady_clock::now();
+	const std::chrono::duration<double> elapsed = endTime - startTime;
+	std::cout << "Took " << elapsed << " to draw frame.\n";
+
+#if RT_TEST_SCENE
+	BufferToPPM("Frame_Test.ppm", imageWidth, imageHeight, buffer);
+#else
+	BufferToPPM("Frame_500.ppm", imageWidth, imageHeight, buffer);
+#endif
 	delete[] buffer;
 
 	return 0;
