@@ -132,6 +132,8 @@ Vec3 GenerateSampleSquare()
 	return Vec3{ RandomValue<double>(-0.5, 0.5), RandomValue<double>(-0.5, 0.5), 0 };
 }
 
+#define RT_USE_NN_SAMPLING 0
+
 int main()
 {
 	// Image
@@ -153,7 +155,12 @@ int main()
 	const Material mat_leftSphere
 	{
 		.type = MaterialType::Dielectric,
-		.refractiveIndex = 1.0 / 1.333
+		.refractiveIndex = 1.5
+	};
+	const Material mat_leftBubble
+	{
+		.type = MaterialType::Dielectric,
+		.refractiveIndex = 1.0 / 1.5
 	};
 	const Material mat_rightSphere
 	{
@@ -166,6 +173,7 @@ int main()
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	-100.5,	-1}, .radius = 100, .material = &mat_ground });
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 0,	0,		-1.2}, .radius = 0.5, .material = &mat_centerSphere });
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.5, .material = &mat_leftSphere });
+	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{-1,	0,		-1.0}, .radius = 0.4, .material = &mat_leftBubble });
 	world.shapes.push_back(Shape{ .type = ShapeType::Sphere, .center = Point3{ 1,	0,		-1.0}, .radius = 0.5, .material = &mat_rightSphere });
 
 	// Camera
@@ -189,7 +197,7 @@ int main()
 	printf("Aspect ratio: %.2f | Image W: %d H: %d | Viewport H: %.2f W: %.2f", aspectRatio, imageWidth, imageHeight, viewportWidth, viewportHeight);
 
 	// Render
-	//const int32 samplesPerPixel = 100;
+#if RT_USE_NN_SAMPLING
 	const Vec3 sampleOffsets[] =
 	{
 		Vec3{0.5, 0, 0}, // top
@@ -204,9 +212,12 @@ int main()
 	};
 
 	const int32 samplesPerPixel = (int32)std::size(sampleOffsets);
+#else
+	const int32 samplesPerPixel = 100;
+#endif
 	const double pixelSampleScale = 1.0 / (double)samplesPerPixel;
 
-	constexpr int32 maxBounces = 5;
+	constexpr int32 maxBounces = 50;
 
 	const uint32 buffSize = imageWidth * imageHeight;
 	uint8* buffer = new uint8[buffSize * 3];
@@ -219,8 +230,11 @@ int main()
 			for (int32 sample = 0; sample < samplesPerPixel; ++sample)
 			{
 				// Construct a camera ray directed at a randomly sampled point around the pixel location x,y.
-				//const Vec3 offset = GenerateSampleSquare();
+#if RT_USE_NN_SAMPLING
 				const Vec3 offset = sampleOffsets[sample];
+#else
+				const Vec3 offset = GenerateSampleSquare();
+#endif
 				const Vec3 pixelCenter = pixel00Pos 
 					+ ((x + offset.x) * pixelDeltaU) 
 					+ ((y + offset.y) * pixelDeltaV);
